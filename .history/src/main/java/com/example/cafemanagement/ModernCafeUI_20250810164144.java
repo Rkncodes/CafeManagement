@@ -1,0 +1,238 @@
+package com.example.cafemanagement;
+
+import com.formdev.flatlaf.FlatLightLaf;
+
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.text.NumberFormat;
+import java.util.List;
+import java.util.Locale;
+
+public class ModernCafeUI extends JFrame {
+    private JTextField searchField;
+    private JComboBox<String> categoryCombo;
+    private JPanel productsGrid;
+    private JScrollPane gridScroll;
+    private ProductDAO productDAO;
+
+    public ModernCafeUI() {
+        FlatLightLaf.setup(); // Modern look
+        productDAO = new ProductDAO();
+
+        setTitle("★ Cafe Manager");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(1280, 800);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout(10, 10));
+        ((JComponent) getContentPane()).setBorder(new EmptyBorder(8, 8, 8, 8));
+
+        add(createTopBar(), BorderLayout.NORTH);
+        add(createCenterPanel(), BorderLayout.CENTER);
+        add(createCartPanel(), BorderLayout.EAST);
+
+        reloadProducts(null, null);
+    }
+
+    private JComponent createTopBar() {
+        JPanel top = new JPanel(new BorderLayout(10, 10));
+        top.setBorder(new EmptyBorder(8, 8, 8, 8));
+
+        JLabel title = new JLabel("☕ Cafe Manager");
+        title.setFont(new Font("SansSerif", Font.BOLD, 26));
+        top.add(title, BorderLayout.WEST);
+
+        JPanel center = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        searchField = new JTextField(30);
+        searchField.setToolTipText("Search products...");
+        JButton searchBtn = createStyledButton("Search");
+        searchBtn.addActionListener(e -> onSearch());
+        center.add(searchField);
+        center.add(searchBtn);
+
+        categoryCombo = new JComboBox<>(new String[]{"All", "Coffee", "Snacks", "Dessert", "Beverage"});
+        center.add(new JLabel("Category:"));
+        center.add(categoryCombo);
+
+        top.add(center, BorderLayout.CENTER);
+
+        JButton add = createStyledButton("➕ Add Product");
+        add.addActionListener(e -> openAddProductDialog());
+        top.add(add, BorderLayout.EAST);
+
+        return top;
+    }
+
+    private JComponent createCenterPanel() {
+        productsGrid = new JPanel();
+        productsGrid.setLayout(new WrapLayout(FlowLayout.LEFT, 20, 20));
+        gridScroll = new JScrollPane(productsGrid);
+        gridScroll.getVerticalScrollBar().setUnitIncrement(16);
+        gridScroll.setBorder(BorderFactory.createEmptyBorder());
+        return gridScroll;
+    }
+
+    private JComponent createCartPanel() {
+        JPanel cart = new JPanel(new BorderLayout(10, 10));
+        cart.setPreferredSize(new Dimension(350, 0));
+        cart.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+                new EmptyBorder(10, 10, 10, 10)
+        ));
+        cart.setBackground(new Color(250, 250, 250));
+
+        JLabel info = new JLabel("<html><h2>🛒 Cart</h2><p>(Checkout coming next)</p></html>");
+        info.setHorizontalAlignment(SwingConstants.CENTER);
+        cart.add(info, BorderLayout.NORTH);
+
+        return cart;
+    }
+
+    private JButton createStyledButton(String text) {
+        JButton btn = new JButton(text);
+        btn.setFont(new Font("SansSerif", Font.BOLD, 14));
+        btn.setFocusPainted(false);
+        btn.setBackground(new Color(0, 123, 255));
+        btn.setForeground(Color.WHITE);
+        btn.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btn.setBackground(new Color(0, 105, 217));
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btn.setBackground(new Color(0, 123, 255));
+            }
+        });
+        return btn;
+    }
+
+    private void onSearch() {
+        String q = searchField.getText().trim();
+        String cat = (String) categoryCombo.getSelectedItem();
+        if ("All".equals(cat)) cat = null;
+        reloadProducts(q.isEmpty() ? null : q, cat);
+    }
+
+    private void reloadProducts(String q, String category) {
+        productsGrid.removeAll();
+        List<Product> list = productDAO.findAll();
+        for (Product p : list) {
+            if (q != null && !p.getName().toLowerCase().contains(q.toLowerCase())) continue;
+            if (category != null && !category.equalsIgnoreCase(p.getCategory())) continue;
+            productsGrid.add(createProductCard(p));
+        }
+        productsGrid.revalidate();
+        productsGrid.repaint();
+    }
+
+    private JComponent createProductCard(Product p) {
+        JPanel card = new JPanel(new BorderLayout());
+        card.setPreferredSize(new Dimension(240, 320));
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true),
+                new EmptyBorder(8, 8, 8, 8)
+        ));
+        card.setBackground(Color.WHITE);
+        card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        card.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                card.setBorder(BorderFactory.createLineBorder(new Color(180, 180, 180), 2, true));
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                card.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true));
+            }
+        });
+
+        JLabel imgLabel = new JLabel();
+        imgLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        imgLabel.setPreferredSize(new Dimension(220, 160));
+        ImageIcon icon = loadImageIcon(p.getImagePath(), 220, 160);
+        if (icon != null) imgLabel.setIcon(icon);
+        else imgLabel.setText("<html><center>No Image</center></html>");
+        card.add(imgLabel, BorderLayout.NORTH);
+
+        JPanel info = new JPanel(new BorderLayout(5, 5));
+        info.setOpaque(false);
+        JLabel name = new JLabel("<html><b>" + p.getName() + "</b></html>");
+        name.setFont(new Font("SansSerif", Font.BOLD, 16));
+        info.add(name, BorderLayout.NORTH);
+
+        NumberFormat nf = NumberFormat.getCurrencyInstance(new Locale("en", "IN"));
+        JLabel price = new JLabel(nf.format(p.getPrice()));
+        price.setFont(new Font("SansSerif", Font.BOLD, 15));
+        price.setForeground(new Color(0, 128, 0));
+        info.add(price, BorderLayout.WEST);
+
+        JLabel cat = new JLabel(p.getCategory());
+        cat.setHorizontalAlignment(SwingConstants.RIGHT);
+        cat.setOpaque(true);
+        cat.setBackground(new Color(240, 240, 240));
+        cat.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
+        info.add(cat, BorderLayout.EAST);
+
+        card.add(info, BorderLayout.CENTER);
+
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
+        actions.setOpaque(false);
+        JButton addBtn = createStyledButton("Add");
+        addBtn.addActionListener(e -> JOptionPane.showMessageDialog(this, p.getName() + " added to cart (demo)."));
+        JButton edit = createStyledButton("Edit");
+        edit.addActionListener(e -> openEditDialog(p));
+        JButton del = createStyledButton("Delete");
+        del.setBackground(new Color(220, 53, 69));
+        del.addActionListener(e -> {
+            int ok = JOptionPane.showConfirmDialog(this, "Delete " + p.getName() + "?", "Confirm", JOptionPane.YES_NO_OPTION);
+            if (ok == JOptionPane.YES_OPTION) {
+                productDAO.deleteById(p.getId());
+                reloadProducts(null, null);
+            }
+        });
+        actions.add(addBtn);
+        actions.add(edit);
+        actions.add(del);
+        card.add(actions, BorderLayout.SOUTH);
+
+        return card;
+    }
+
+    private void openAddProductDialog() {
+        ProductFormDialog d = new ProductFormDialog(this, null);
+        d.setVisible(true);
+        if (d.isSaved()) {
+            productDAO.insert(d.getProduct());
+            reloadProducts(null, null);
+        }
+    }
+
+    private void openEditDialog(Product p) {
+        ProductFormDialog d = new ProductFormDialog(this, p);
+        d.setVisible(true);
+        if (d.isSaved()) {
+            productDAO.update(d.getProduct());
+            reloadProducts(null, null);
+        }
+    }
+
+    private ImageIcon loadImageIcon(String imagePath, int w, int h) {
+        if (imagePath == null || imagePath.isEmpty()) return null;
+        try {
+            File imgFile = new File(imagePath);
+            if (!imgFile.exists()) return null;
+            BufferedImage img = ImageIO.read(imgFile);
+            Image scaled = img.getScaledInstance(w, h, Image.SCALE_SMOOTH);
+            return new ImageIcon(scaled);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
+    public static void main(String[] args) {
+        MongoDBUtil.init("mongodb://localhost:27017", "cafe_db");
+        SwingUtilities.invokeLater(() -> new ModernCafeUI().setVisible(true));
+    }
+}
