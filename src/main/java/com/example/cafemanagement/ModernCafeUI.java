@@ -601,8 +601,7 @@ private void saveInvoiceToFile(String invoiceText) {
 }
 
 
-    public static void main(String[] args) {
-        MongoDBUtil.init("mongodb://localhost:27017", "cafe_db");
+   public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new ModernCafeUI().setVisible(true));
     }
 }

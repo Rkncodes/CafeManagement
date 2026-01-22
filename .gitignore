@@ -9,3 +9,4 @@ target/
 .history/
 images/
 .DS_Store
+Thumbs.db

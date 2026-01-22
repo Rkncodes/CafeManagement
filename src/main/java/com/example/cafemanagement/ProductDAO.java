@@ -1,105 +1,108 @@
 package com.example.cafemanagement;
 
-import com.mongodb.MongoWriteException;
-import com.mongodb.ErrorCategory;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
-import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.UpdateResult;
-import com.mongodb.client.model.IndexOptions;
-import com.mongodb.client.model.Indexes;
-import org.bson.Document;
-import org.bson.types.ObjectId;
-
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class ProductDAO {
 
-    private MongoCollection<Document> coll;
-
-    public ProductDAO() {
-        coll = MongoDBUtil.getDatabase().getCollection("products");
-
-        // Ensure unique compound index on (name + category)
-        IndexOptions options = new IndexOptions().unique(true);
-
-        try {
-            String indexName = coll.createIndex(Indexes.compoundIndex(
-                Indexes.ascending("name"),
-                Indexes.ascending("category")
-            ), options);
-            System.out.println("Created index: " + indexName);
-        } catch (Exception e) {
-            System.err.println("Failed to create index: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Insert a new product only if no product with the same name and category exists.
-     * Returns the inserted product with ID if success, otherwise null.
-     */
     public Product insert(Product p) {
-        System.out.println("Attempting to insert product: " + p.getName() + ", " + p.getCategory());
-        try {
-            Document doc = new Document("name", p.getName())
-                    .append("price", p.getPrice())
-                    .append("category", p.getCategory())
-                    .append("imagePath", p.getImagePath());
-            coll.insertOne(doc);
-            String id = doc.getObjectId("_id").toHexString();
-            p.setId(id);
-            System.out.println("Insert successful for product: " + p.getName());
-            return p;
-        } catch (MongoWriteException e) {
-            if (e.getError().getCategory() == ErrorCategory.DUPLICATE_KEY) {
-                System.out.println("Duplicate detected for product: " + p.getName());
-                return null;
+        String sql = """
+            INSERT INTO products (name, price, category, image_path)
+            VALUES (?, ?, ?, ?)
+        """;
+
+        try (Connection con = JDBCConnection.getConnection();
+             PreparedStatement ps =
+                 con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            ps.setString(1, p.getName());
+            ps.setDouble(2, p.getPrice());
+            ps.setString(3, p.getCategory());
+            ps.setString(4, p.getImagePath());
+
+            ps.executeUpdate();
+
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    p.setId(String.valueOf(rs.getInt(1)));
+                }
             }
-            throw e;
+            return p;
+
+        } catch (SQLIntegrityConstraintViolationException e) {
+            // duplicate (name + category)
+            return null;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
     public List<Product> findAll() {
         List<Product> list = new ArrayList<>();
-        Set<String> seen = new HashSet<>();
+        String sql = "SELECT id, name, price, category, image_path FROM products";
 
-        try (MongoCursor<Document> it = coll.find().iterator()) {
-            while (it.hasNext()) {
-                Document d = it.next();
-                String id = d.getObjectId("_id").toHexString();
-                String name = d.getString("name");
-                String category = d.getString("category");
-                String key = name.toLowerCase() + "::" + category.toLowerCase();
+        try (Connection con = JDBCConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
-                if (seen.contains(key)) {
-                    continue;
-                }
-                seen.add(key);
-
-                Object priceObj = d.get("price");
-                double price = (priceObj instanceof Number) ? ((Number) priceObj).doubleValue() : 0.0;
-                String imagePath = d.getString("imagePath");
-
-                list.add(new Product(id, name, price, category, imagePath));
+            while (rs.next()) {
+                Product p = new Product(
+                    String.valueOf(rs.getInt("id")),
+                    rs.getString("name"),
+                    rs.getDouble("price"),
+                    rs.getString("category"),
+                    rs.getString("image_path")
+                );
+                list.add(p);
             }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
+
         return list;
     }
 
     public boolean update(Product p) {
-        Document update = new Document("$set", new Document("name", p.getName())
-                .append("price", p.getPrice())
-                .append("category", p.getCategory())
-                .append("imagePath", p.getImagePath()));
-        UpdateResult result = coll.updateOne(new Document("_id", new ObjectId(p.getId())), update);
-        return result.getModifiedCount() > 0;
+        String sql = """
+            UPDATE products
+            SET name = ?, price = ?, category = ?, image_path = ?
+            WHERE id = ?
+        """;
+
+        try (Connection con = JDBCConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, p.getName());
+            ps.setDouble(2, p.getPrice());
+            ps.setString(3, p.getCategory());
+            ps.setString(4, p.getImagePath());
+            ps.setInt(5, Integer.parseInt(p.getId()));
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public boolean deleteById(String id) {
-        DeleteResult result = coll.deleteOne(new Document("_id", new ObjectId(id)));
-        return result.getDeletedCount() > 0;
+        String sql = "DELETE FROM products WHERE id = ?";
+
+        try (Connection con = JDBCConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, Integer.parseInt(id));
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
