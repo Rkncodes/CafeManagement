@@ -1,0 +1,11 @@
+# Ignore optimized version for first review
+Cafe-2/
+
+# Ignore build output
+target/
+*.class
+
+# Ignore misc
+.history/
+images/
+.DS_Store
