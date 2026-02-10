@@ -22,35 +22,72 @@ public class ModernCafeUI extends JFrame {
     private JScrollPane gridScroll;
     private ProductDAO productDAO;
 
+    private ReservationDAO reservationDAO = new ReservationDAO();
+    private OrderStatusLogDAO orderStatusLogDAO = new OrderStatusLogDAO();
+    private FeedbackDAO feedbackDAO = new FeedbackDAO();
+
+
     // Cart support
     private CartManager cartManager;
     private JPanel cartItemsPanel;
     private JLabel totalLabel;
 
-    public ModernCafeUI() {
-        FlatLightLaf.setup();
-        productDAO = new ProductDAO();
-        cartManager = new CartManager();
+   public ModernCafeUI() {
+    FlatLightLaf.setup();
+    productDAO = new ProductDAO();
+    cartManager = new CartManager();
 
-        setTitle("★ Cafe Manager");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1280, 800);
-        setLocationRelativeTo(null);
-        setLayout(new BorderLayout(10, 10));
-        ((JComponent) getContentPane()).setBorder(new EmptyBorder(8, 8, 8, 8));
+    setTitle("★ Cafe Manager");
+    setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    setSize(1280, 800);
+    setLocationRelativeTo(null);
+    setLayout(new BorderLayout(10, 10));
+    ((JComponent) getContentPane()).setBorder(new EmptyBorder(8, 8, 8, 8));
 
-        add(createTopBar(), BorderLayout.NORTH);
-        add(createCenterPanel(), BorderLayout.CENTER);
-        add(createCartPanel(), BorderLayout.EAST);
+    JPanel topContainer = new JPanel();
+    topContainer.setLayout(new BoxLayout(topContainer, BoxLayout.Y_AXIS));
 
-        reloadProducts(null, null);
-    }
+    // line above hero
+    
+
+    // hero
+    topContainer.add(createHeroPanel());
+
+    // line below hero
+    topContainer.add(createSeparator());
+
+    // toolbar
+    topContainer.add(createTopBar());
+
+    // line below toolbar
+    topContainer.add(createSeparator());
+
+    add(topContainer, BorderLayout.NORTH);
+
+
+    JPanel mainContent = new JPanel(new BorderLayout(20, 0));
+    mainContent.add(createCenterPanel(), BorderLayout.CENTER);
+    mainContent.add(createCartPanel(), BorderLayout.EAST);
+
+    add(mainContent, BorderLayout.CENTER);
+
+    reloadProducts(null, null);
+}
+
+private JComponent createSeparator() {
+    JSeparator sep = new JSeparator(JSeparator.HORIZONTAL);
+    sep.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+    sep.setForeground(new Color(210, 210, 210));
+    sep.setBackground(new Color(210, 210, 210));
+    return sep;
+}
+
 
    private JComponent createTopBar() {
     JPanel top = new JPanel(new BorderLayout(10, 10));
     top.setBorder(new EmptyBorder(8, 8, 8, 8));
 JLabel title = new JLabel("☕ Cafe Manager");
-title.setFont(new Font("SansSerif", Font.BOLD, 26));
+title.setFont(new Font("SansSerif", Font.BOLD, 20));
 title.setForeground(Color.BLACK);
 title.setOpaque(true); // Ensure the component is not transparent
 top.add(title, BorderLayout.WEST);
@@ -177,21 +214,71 @@ private void showAdminDialog() {
 
 private JComponent createReservationsPanel() {
     String[] cols = {"Reservation ID", "User", "Table", "Time"};
-    JTable table = new JTable(new DefaultTableModel(cols, 0));
+    DefaultTableModel model = new DefaultTableModel(cols, 0);
+    JTable table = new JTable(model);
+
+    for (Object[] row : reservationDAO.findAll()) {
+        model.addRow(row);
+    }
+
     return new JScrollPane(table);
 }
+
 
 private JComponent createOrderStatusPanel() {
     String[] cols = {"Order ID", "Old Status", "New Status", "Changed At"};
-    JTable table = new JTable(new DefaultTableModel(cols, 0));
+    DefaultTableModel model = new DefaultTableModel(cols, 0);
+    JTable table = new JTable(model);
+
+    for (Object[] row : orderStatusLogDAO.findAll()) {
+        model.addRow(row);
+    }
+
     return new JScrollPane(table);
 }
 
+
 private JComponent createFeedbackPanel() {
     String[] cols = {"User", "Order", "Rating", "Comment"};
-    JTable table = new JTable(new DefaultTableModel(cols, 0));
+    DefaultTableModel model = new DefaultTableModel(cols, 0);
+    JTable table = new JTable(model);
+
+    for (Object[] row : feedbackDAO.findAll()) {
+        model.addRow(row);
+    }
+
     return new JScrollPane(table);
 }
+
+private JComponent createHeroPanel() {
+    JPanel hero = new JPanel(new BorderLayout(30, 0));
+    hero.setBorder(new EmptyBorder(20, 40, 10, 40));
+    hero.setBackground(new Color(248, 245, 240));
+
+    JPanel textPanel = new JPanel();
+    textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
+    textPanel.setOpaque(false);
+
+    JLabel title = new JLabel("Cafe Management System ☕");
+    title.setFont(new Font("SansSerif", Font.BOLD, 28));
+
+    JLabel subtitle = new JLabel("Order your favourites with one click.");
+    subtitle.setFont(new Font("SansSerif", Font.PLAIN, 16));
+    subtitle.setForeground(new Color(90, 90, 90));
+
+    textPanel.add(title);
+    textPanel.add(Box.createVerticalStrut(10));
+    textPanel.add(subtitle);
+
+    JLabel image = new JLabel();
+    image.setIcon(loadImageIcon("images/hero.jpg", 300, 200));
+
+    hero.add(textPanel, BorderLayout.WEST);
+    hero.add(image, BorderLayout.EAST);
+
+    return hero;
+}
+
 
 
     private JButton createStyledButton(String text) {
