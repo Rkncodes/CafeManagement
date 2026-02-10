@@ -12,6 +12,8 @@ import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import javax.swing.table.DefaultTableModel;
+
 
 public class ModernCafeUI extends JFrame {
     private JTextField searchField;
@@ -60,23 +62,35 @@ top.add(title, BorderLayout.WEST);
     center.add(searchField);
     center.add(searchBtn);
 
-    categoryCombo = new JComboBox<>(new String[]{"All", "Coffee", "Snacks", "Dessert", "Beverage"});
-    center.add(new JLabel("Category:"));
-    center.add(categoryCombo);
+   categoryCombo = new JComboBox<>(new String[]{"All", "Coffee", "Snacks", "Dessert", "Beverage"});
+
+categoryCombo.addActionListener(e -> {
+    reloadProducts(getCurrentSearchQuery(), getCurrentCategoryFilter());
+});
+
+center.add(new JLabel("Category:"));
+center.add(categoryCombo);
 
     top.add(center, BorderLayout.CENTER);
 
-    JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+  JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
 
-    JButton refreshBtn = createStyledButton("🔄 Refresh");
-    refreshBtn.addActionListener(e -> reloadProducts(getCurrentSearchQuery(), getCurrentCategoryFilter()));
-    rightPanel.add(refreshBtn);
+JButton refreshBtn = createStyledButton("🔄 Refresh");
+refreshBtn.addActionListener(e ->
+        reloadProducts(getCurrentSearchQuery(), getCurrentCategoryFilter()));
+rightPanel.add(refreshBtn);
 
-    JButton add = createStyledButton("➕ Add Product");
-    add.addActionListener(e -> openAddProductDialog());
-    rightPanel.add(add);
+JButton add = createStyledButton("➕ Add Product");
+add.addActionListener(e -> openAddProductDialog());
+rightPanel.add(add);
 
-    top.add(rightPanel, BorderLayout.EAST);
+// 🔥 THIS WAS MISSING
+JButton adminBtn = createStyledButton("🛠 Admin");
+adminBtn.addActionListener(e -> showAdminDialog());
+rightPanel.add(adminBtn);
+
+top.add(rightPanel, BorderLayout.EAST);
+
 
     return top;
 }
@@ -146,6 +160,39 @@ top.add(title, BorderLayout.WEST);
 
     return cart;
 }
+
+private void showAdminDialog() {
+    JDialog dialog = new JDialog(this, "🛠 Admin Panel", true);
+    dialog.setSize(900, 600);
+    dialog.setLocationRelativeTo(this);
+
+    JTabbedPane tabs = new JTabbedPane();
+    tabs.add("📅 Reservations", createReservationsPanel());
+    tabs.add("📦 Order Status Logs", createOrderStatusPanel());
+    tabs.add("⭐ Feedback", createFeedbackPanel());
+
+    dialog.add(tabs);
+    dialog.setVisible(true);
+}
+
+private JComponent createReservationsPanel() {
+    String[] cols = {"Reservation ID", "User", "Table", "Time"};
+    JTable table = new JTable(new DefaultTableModel(cols, 0));
+    return new JScrollPane(table);
+}
+
+private JComponent createOrderStatusPanel() {
+    String[] cols = {"Order ID", "Old Status", "New Status", "Changed At"};
+    JTable table = new JTable(new DefaultTableModel(cols, 0));
+    return new JScrollPane(table);
+}
+
+private JComponent createFeedbackPanel() {
+    String[] cols = {"User", "Order", "Rating", "Comment"};
+    JTable table = new JTable(new DefaultTableModel(cols, 0));
+    return new JScrollPane(table);
+}
+
 
     private JButton createStyledButton(String text) {
         JButton btn = new JButton(text);
