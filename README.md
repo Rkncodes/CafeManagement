@@ -55,17 +55,19 @@ The system provides a **point-of-sale (POS) style interface** where staff can qu
 
 The application follows a layered architecture:
 
-```
+## System Architecture
 
+The application follows a layered architecture:
+
+```text
 UI Layer (Java Swing)
-↓
+        ↓
 Business Logic Layer
-↓
+        ↓
 Database Access Layer (JDBC)
-↓
+        ↓
 MySQL Database
 
-```
 
 This separation improves **maintainability, scalability, and modularity**.
 
@@ -98,19 +100,13 @@ The database stores menu items, customer orders, reservations, and feedback for 
 
 ## Running the Application
 
-Clone the repository and run the project using Maven:
+Clone the repository and run the project using Maven.
 
-```
-
-git clone [https://github.com/Rkncodes/CafeManagement.git](https://github.com/Rkncodes/CafeManagement.git)
-
+```bash
+git clone https://github.com/Rkncodes/CafeManagement.git
 cd CafeManagement
-
 mvn clean install
-
 mvn clean compile exec:java -Dexec.mainClass="com.example.cafemanagement.ModernCafeUI"
-
-```
 
 ---
 
