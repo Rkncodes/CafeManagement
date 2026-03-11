@@ -1,125 +1,174 @@
-```markdown
-# Cafe Management System
+☕ Java Cafe POS System
 
-A **desktop cafe management application** built with **Java (Swing) and MySQL**, designed to streamline cafe operations including menu management, order processing, billing, and customer feedback.
+A desktop Point-of-Sale (POS) application built with **Java Swing** to manage cafe operations such as menu management, order processing, and revenue tracking.
 
-The system provides a **point-of-sale (POS) style interface** where staff can quickly add items to orders, calculate totals with tax, and manage products through an admin panel.
-
----
-
-## Tech Stack
-
-- **Java (Swing)** – Desktop GUI  
-- **MySQL** – Persistent data storage  
-- **JDBC** – Database connectivity  
-- **SQL** – Querying and CRUD operations  
-- **Maven** – Build and dependency management  
-- **MVC-style modular architecture**
+The system uses **MySQL for persistent storage** and supports role-based access control for different staff members.
 
 ---
 
-## Features
+## Overview
 
-### Menu & Product Management
-- Add, edit, and delete cafe menu items  
-- Categorize items (Coffee, Snacks, Dessert, Beverage)  
-- Image-based menu display  
-- Dynamic product loading from the database  
+This application simulates a cafe ordering system where staff can:
 
-### Order Management
-- Add items to cart with quantity controls  
-- Live order summary panel  
-- Real-time subtotal, tax (10%), and total calculation  
-- Table-based ordering system  
+- manage menu items
+- process customer orders
+- track revenue statistics
+- control system access through role-based permissions
 
-### Checkout System
-- Customer checkout form  
-- Capture customer name and phone number  
-- Payment method selection  
-- Automatic order summary generation  
-
-### Admin Panel
-- Reservation management  
-- Order status logs  
-- Customer feedback monitoring  
-- Ratings and comment tracking  
-
-### Search & Filtering
-- Search products instantly  
-- Filter menu by category  
-- Refresh product list dynamically  
+The goal is to provide a simple POS workflow with a responsive desktop interface.
 
 ---
 
-## System Architecture
+## Key Functional Modules
 
-The application follows a layered architecture:
+### 🔐 Authentication & Staff Roles
 
-## System Architecture
+The system includes a secure login mechanism with restricted access based on roles.
 
-The application follows a layered architecture:
+- Passwords stored using **BCrypt hashing**
+- Two staff roles supported:
 
-```text
-UI Layer (Java Swing)
-        ↓
-Business Logic Layer
-        ↓
-Database Access Layer (JDBC)
-        ↓
-MySQL Database
+| Role    | Permissions                                              |
+|---------|----------------------------------------------------------|
+| Admin   | Full system access including product and user management |
+| Cashier | Order creation and checkout only                         |
 
-
-This separation improves **maintainability, scalability, and modularity**.
+Default accounts are automatically created on the first run.
 
 ---
 
-## Database Design
+### 🛍️ Menu Management
 
-Key database tables used in the system:
+Admins can maintain the cafe menu through a dedicated panel.
 
-- `products`
-- `orders`
-- `order_items`
-- `reservations`
-- `feedback`
+Features include:
 
-The database stores menu items, customer orders, reservations, and feedback for operational tracking and analysis.
+- Add new products
+- Edit or delete existing items
+- Assign product categories (Coffee, Snacks, Dessert, Beverage)
+- Upload product images using drag-and-drop
+- Display products as interactive card components
 
 ---
 
-## Example Workflow
+### 🛒 Order Processing
 
-1. Staff selects menu items from the interface  
-2. Items are added to the **Order Summary panel**  
-3. System calculates **subtotal, tax, and total automatically**  
-4. Customer details are entered during checkout  
-5. Order is stored in the **MySQL database**  
-6. Admin panel can review **orders, reservations, and feedback**
+Cashiers can create and manage orders through the POS interface.
+
+Workflow:
+
+1. Browse or search products  
+2. Add items to the cart  
+3. Adjust product quantities  
+4. Assign a table number  
+5. Checkout and generate invoice  
+
+The system automatically applies a **10% tax calculation**.
+
+---
+
+### 📊 Sales Analytics
+
+The analytics module allows admins to monitor business performance.
+
+Available metrics include:
+
+- total revenue
+- number of orders
+- average order value
+
+Reports can be filtered by:
+
+- Today
+- This Week
+- This Month
+- All Time
+
+---
+
+### 🎨 User Interface
+
+The UI is built using **Java Swing with FlatLaf styling** and includes:
+
+- modern card-based layouts
+- dark / light theme toggle
+- hover animations
+- responsive product browsing panels
+
+---
+
+## Technology Stack
+
+| Component             | Technology |
+|-----------------------|------------|
+| Language              | Java 17    |
+| UI Framework          | Java Swing |
+| Database              | MySQL      |
+| Database Connectivity | JDBC       |
+| Security              | BCrypt     |
+| UI Theme              | FlatLaf    |
+| Build Tool            | Maven      |
 
 ---
 
 ## Running the Application
 
-Clone the repository and run the project using Maven.
+### 1️⃣ Start MySQL
 
-```bash
-git clone https://github.com/Rkncodes/CafeManagement.git
-cd CafeManagement
-mvn clean install
-mvn clean compile exec:java -Dexec.mainClass="com.example.cafemanagement.ModernCafeUI"
+Ensure the **MySQL server is running locally** and the database schema has been created.
 
----
+### 2️⃣ Run the Project
 
-## Future Improvements
-
-- User authentication for admin/staff roles  
-- Inventory tracking system  
-- Order history analytics dashboard  
-- PDF bill generation  
-
----
-
-## Real-World Use
-
-This system was tested in a **local cafe environment** to simulate real POS operations including order management, billing, and customer feedback tracking.
 ```
+mvn clean compile exec:java -Dexec.mainClass="com.example.cafemanagement.ModernCafeUI"
+```
+
+---
+
+## Project Structure
+
+```
+src/main/java/com/example/cafemanagement/
+
+ModernCafeUI.java
+LoginDialog.java
+UserDAO.java
+ProductDAO.java
+CartManager.java
+DatabaseUtil.java
+ProductFormDialog.java
+ProductEditDialog.java
+WrapLayout.java
+```
+
+The project follows a **DAO-based architecture**, where database operations are handled through dedicated data access classes.
+
+---
+
+## Database Tables
+
+| Table       | Purpose                        |
+|-------------|--------------------------------|
+| users       | staff accounts and credentials |
+| products    | product catalog                |
+| orders      | order records                  |
+| order_items | items within each order        |
+| analytics   | revenue and order statistics   |
+
+---
+
+## Planned Improvements
+
+Possible future enhancements:
+
+- receipt / invoice printing
+- inventory management
+- employee shift tracking
+- customer loyalty programs
+- advanced reporting and exports
+
+---
+
+## Notes
+
+Default login credentials are included for **testing purposes only** and should be changed before production deployment.
