@@ -103,8 +103,11 @@ Clone the repository and run the project using Maven:
 ```
 
 git clone [https://github.com/Rkncodes/CafeManagement.git](https://github.com/Rkncodes/CafeManagement.git)
+
 cd CafeManagement
+
 mvn clean install
+
 mvn clean compile exec:java -Dexec.mainClass="com.example.cafemanagement.ModernCafeUI"
 
 ```
